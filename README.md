@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Trupeer Player — Three.js Video + Synced Transcript
 
 A single-page Next.js + TypeScript app that renders a video on a Three.js
@@ -107,3 +108,6 @@ call. The shape of the work would otherwise be identical.
 
 - Video: `BigBuckBunny.mp4` (Google Cloud sample, CC-BY)
 - Background: Unsplash forest photo (royalty-free)
+=======
+# trupeer-player
+>>>>>>> a9cf57aaf6ba48b9ea281a3c001f1a33f75e9d51
