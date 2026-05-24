@@ -15,3 +15,13 @@ export interface SkipRange {
   start: number;
   end: number;
 }
+
+export interface PlayerAssets {
+  videoUrl: string;
+  backgroundUrl: string;
+}
+
+export interface PlayerData {
+  transcript: Transcript;
+  assets: PlayerAssets;
+}

@@ -1,25 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { Transcript } from "@/lib/types";
-import { fetchTranscript } from "@/lib/mockApi";
+import { useVideoContext } from "@/lib/videoContext";
 
+/** Transcript from shared bootstrap (mock API in VideoContextProvider). */
 export function useTranscript() {
-  const [transcript, setTranscript] = useState<Transcript | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchTranscript().then((data) => {
-      if (!cancelled) {
-        setTranscript(data);
-        setLoading(false);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { transcript, loading };
+  const { transcript, bootstrapLoading } = useVideoContext();
+  return { transcript, loading: bootstrapLoading };
 }

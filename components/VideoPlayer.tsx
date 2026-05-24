@@ -4,8 +4,10 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useVideoContext } from "@/lib/videoContext";
 
-const VIDEO_URL = "/video.mp4";
-const BG_IMAGE_URL = "/background.jpg";
+export interface VideoPlayerProps {
+  videoUrl: string;
+  backgroundUrl: string;
+}
 
 // SDF rounded-rect mask. Pixels outside the shape are discarded.
 const VIDEO_FRAG = `
@@ -33,7 +35,7 @@ const VERT = `
   }
 `;
 
-export default function VideoPlayer() {
+export default function VideoPlayer({ videoUrl, backgroundUrl }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
   const isSeekingRef = useRef(false);
@@ -43,8 +45,6 @@ export default function VideoPlayer() {
   const videoPlaneRef = useRef<THREE.Mesh | null>(null);
   const radiusUniformRef = useRef<{ value: number } | null>(null);
 
-  // Mirror padding into a ref so the imperative scale function (defined inside
-  // the one-shot setup effect) always reads the latest value.
   const paddingRef = useRef(padding);
   useEffect(() => {
     paddingRef.current = padding;
@@ -68,29 +68,30 @@ export default function VideoPlayer() {
     renderer.setClearColor(0xffffff, 1);
     container.appendChild(renderer.domElement);
 
-    // Background plane
     const bgGeometry = new THREE.PlaneGeometry(2 * aspect, 2);
     const bgMaterial = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
     const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
     bgMesh.position.z = -0.1;
     scene.add(bgMesh);
 
-    new THREE.TextureLoader().load(BG_IMAGE_URL, (tex) => {
+    const bgLoader = new THREE.TextureLoader();
+    bgLoader.load(backgroundUrl, (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
       bgMaterial.map = tex;
       bgMaterial.color = new THREE.Color(0xffffff);
       bgMaterial.needsUpdate = true;
     });
 
-    // Hidden video element — used as texture source
+    // Muted for autoplay; unmuted on user gesture in PlaybackControls.
     const video = document.createElement("video");
     video.loop = true;
     video.muted = true;
+    video.volume = 1;
     video.playsInline = true;
     video.preload = "auto";
     video.autoplay = true;
     video.style.display = "none";
-    video.src = VIDEO_URL;
+    video.src = videoUrl;
     container.appendChild(video);
     video.load();
     registerVideo(video);
@@ -103,10 +104,9 @@ export default function VideoPlayer() {
       { once: true }
     );
     video.addEventListener("error", () => {
-      console.warn("video failed to load:", VIDEO_URL);
+      console.warn("video failed to load:", videoUrl);
     });
 
-    // Video plane with rounded-rect shader
     const videoTexture = new THREE.VideoTexture(video);
     videoTexture.colorSpace = THREE.SRGBColorSpace;
     videoTexture.minFilter = THREE.LinearFilter;
@@ -149,8 +149,6 @@ export default function VideoPlayer() {
     video.addEventListener("loadedmetadata", rescaleVideoPlane);
     (videoMesh as unknown as { _rescale: () => void })._rescale = rescaleVideoPlane;
 
-    // Render loop + skip-playback. isSeekingRef guards against re-triggering
-    // the skip on the seek that the skip itself caused.
     const tick = () => {
       if (!isSeekingRef.current && video.duration > 0 && !video.paused) {
         const t = video.currentTime;
@@ -205,8 +203,7 @@ export default function VideoPlayer() {
         container.removeChild(video);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [videoUrl, backgroundUrl, registerVideo, skipRanges, borderRadius]);
 
   useEffect(() => {
     const mesh = videoPlaneRef.current as

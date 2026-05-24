@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { useVideoContext } from "@/lib/videoContext";
+import { enableVideoAudio } from "@/lib/videoAudio";
 
 function PlaybackControlsImpl() {
   const { videoRef } = useVideoContext();
@@ -10,6 +11,7 @@ function PlaybackControlsImpl() {
   const timeLabelRef = useRef<HTMLSpanElement | null>(null);
   const durationLabelRef = useRef<HTMLSpanElement | null>(null);
   const playIconRef = useRef<HTMLSpanElement | null>(null);
+  const muteIconRef = useRef<HTMLSpanElement | null>(null);
   const isScrubbingRef = useRef(false);
 
   // Duration is React state — it changes once (on metadata load) and drives
@@ -35,6 +37,7 @@ function PlaybackControlsImpl() {
           if (durationLabelRef.current) durationLabelRef.current.textContent = fmt(dur);
         }
         if (playIconRef.current) playIconRef.current.textContent = v.paused ? "▶" : "⏸";
+        if (muteIconRef.current) muteIconRef.current.textContent = v.muted ? "🔇" : "🔊";
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -45,8 +48,19 @@ function PlaybackControlsImpl() {
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) v.play().catch(() => {});
-    else v.pause();
+    if (v.paused) {
+      enableVideoAudio(v);
+      v.play().catch(() => {});
+    } else {
+      v.pause();
+    }
+  };
+
+  const toggleMute = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.muted) enableVideoAudio(v);
+    else v.muted = true;
   };
 
   const onScrub = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,6 +89,13 @@ function PlaybackControlsImpl() {
           className="w-10 h-10 rounded-full bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white flex items-center justify-center shadow-md shadow-violet-200 transition-colors"
         >
           <span ref={playIconRef} className="text-base leading-none">▶</span>
+        </button>
+        <button
+          onClick={toggleMute}
+          aria-label="Mute / Unmute"
+          className="w-10 h-10 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-colors"
+        >
+          <span ref={muteIconRef} className="text-base leading-none">🔇</span>
         </button>
         <span className="text-sm text-neutral-700 tabular-nums">
           <span ref={timeLabelRef}>0:00</span>

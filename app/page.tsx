@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import PlaybackControls from "@/components/PlaybackControls";
 import VideoControls from "@/components/VideoControls";
-import { VideoContextProvider } from "@/lib/videoContext";
+import { VideoContextProvider, useVideoContext } from "@/lib/videoContext";
 
 const VideoPlayer = dynamic(() => import("@/components/VideoPlayer"), {
   ssr: false,
@@ -14,6 +14,26 @@ const VideoPlayer = dynamic(() => import("@/components/VideoPlayer"), {
     </div>
   ),
 });
+
+function PlayerSection() {
+  const { assets, bootstrapLoading } = useVideoContext();
+
+  if (bootstrapLoading || !assets) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-neutral-50 text-neutral-500 text-sm">
+        Loading player…
+      </div>
+    );
+  }
+
+  return (
+    <VideoPlayer
+      key={`${assets.videoUrl}-${assets.backgroundUrl}`}
+      videoUrl={assets.videoUrl}
+      backgroundUrl={assets.backgroundUrl}
+    />
+  );
+}
 
 export default function HomePage() {
   return (
@@ -34,7 +54,7 @@ export default function HomePage() {
 
         <section className="flex-1 flex flex-col bg-white min-w-0 min-h-0">
           <div className="flex-1 min-h-0">
-            <VideoPlayer />
+            <PlayerSection />
           </div>
           <PlaybackControls />
         </section>
